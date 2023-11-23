@@ -1,117 +1,210 @@
 package com.twa.reservations.service;
 
 import com.twa.reservations.connector.CatalogConnector;
-import com.twa.reservations.connector.configuration.HttpConnectorConfiguration;
+import com.twa.reservations.connector.response.CityDTO;
 import com.twa.reservations.dto.*;
+import com.twa.reservations.enums.APIError;
+import com.twa.reservations.exception.TWAException;
+import com.twa.reservations.model.*;
 import com.twa.reservations.repository.ReservationRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.core.convert.ConversionService;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
-// 1- It's not necessary use 'public'
-// 2- Add the tag and the display name
-public class ReservationServiceTest {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static com.twa.reservations.util.ReservationUtil.getReservationDTO;
+import static com.twa.reservations.util.ReservationUtil.getReservation;
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
-    // 6- Extract the setup to an external method
-    @Test
-    public void testSave() {
+@Tag(value = "business-logic")
+@DisplayName(value = "ReservationService")
+class ReservationServiceTest {
 
-        ReservationRepository repository = new ReservationRepository();
-        ConversionService conversionService = null;
-        CatalogConnector catalogConnector = new CatalogConnector(new HttpConnectorConfiguration());
+    @Mock
+    ReservationRepository repository;
 
-        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+    @Mock
+    ConversionService conversionService;
 
-        PassengerDTO passenger = new PassengerDTO();
-        passenger.setFirstName("Andres");
-        passenger.setLastName("Sacco");
-        passenger.setDocumentType("DNI");
-        passenger.setDocumentNumber("12345678");
-        passenger.setBirthday(LocalDate.of(1985, 1, 1));
+    @Mock
+    CatalogConnector catalogConnector;
 
-        PriceDTO price = new PriceDTO();
-        price.setBasePrice(BigDecimal.ONE);
-        price.setTotalTax(BigDecimal.ZERO);
-        price.setTotalPrice(BigDecimal.ONE);
-
-        SegmentDTO segment = new SegmentDTO();
-        segment.setArrival("2025-01-01");
-        segment.setDeparture("2024-12-31");
-        segment.setOrigin("MAD");
-        segment.setDestination("FCO");
-        segment.setCarrier("AA");
-
-        ItineraryDTO itinerary = new ItineraryDTO();
-        itinerary.setPrice(price);
-        itinerary.setSegment(List.of(segment));
-
-        ReservationDTO reservation = new ReservationDTO();
-        reservation.setPassengers(List.of(passenger));
-        reservation.setItinerary(itinerary);
-
-        service.save(reservation);
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
-    // 6- Check the order
+    @DisplayName(value = "Save should persist the reservation the return the information")
     @Test
-    public void testDelete() {
-        ReservationRepository repository = new ReservationRepository();
-        ConversionService conversionService = null;
-        CatalogConnector catalogConnector = new CatalogConnector(new HttpConnectorConfiguration());
+    void save_should_persist_reservation() {
 
+        // Given
         ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        ReservationDTO reservationDTO = getReservationDTO(null, "BUE", "MIA");
+        Reservation reservationModel = getReservation(3L, "BUE", "MIA");
 
-        service.delete(2L);
+        when(catalogConnector.getCity(any())).thenReturn(new CityDTO());
+        when(conversionService.convert(reservationModel, ReservationDTO.class))
+                .thenReturn(getReservationDTO(3L, "BUE", "MIA"));
+        when(conversionService.convert(reservationDTO, Reservation.class))
+                .thenReturn(getReservation(null, "BUE", "MIA"));
+        when(repository.save(getReservation(null, "BUE", "MIA"))).thenReturn(reservationModel);
+
+        // When
+        ReservationDTO result = service.save(reservationDTO);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(getReservationDTO(3L, "BUE", "MIA"), result));
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
+    @DisplayName(value = "Save should throw an exception")
     @Test
-    public void testGetReservations() {
-        ReservationRepository repository = new ReservationRepository();
-        ConversionService conversionService = null;
-        CatalogConnector catalogConnector = new CatalogConnector(new HttpConnectorConfiguration());
+    void save_should_throw_an_exception() {
 
+        // Given
         ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        ReservationDTO reservationDTO = getReservationDTO(1L, "BUE", "MIA");
 
-        service.getReservations();
+        // When
+        TWAException exception = assertThrows(TWAException.class, () -> service.save(reservationDTO));
+
+        // Then
+        assertAll(() -> assertEquals(APIError.RESERVATION_WITH_SAME_ID.getHttpStatus(), exception.getStatus()),
+                () -> assertEquals(APIError.RESERVATION_WITH_SAME_ID.getMessage(), exception.getDescription()));
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
-    // 6- Not exists a test when not exist a reservation
+    @DisplayName(value = "Delete should remove a reservation")
     @Test
-    public void testGetReservationById() {
-        ReservationRepository repository = new ReservationRepository();
-        ConversionService conversionService = null;
-        CatalogConnector catalogConnector = new CatalogConnector(new HttpConnectorConfiguration());
+    void delete_should_remove_a_reservation() {
 
+        // Given
+        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        when(repository.getReservationById(1L)).thenReturn(Optional.of(getReservation(1L, "BUE", "MAD")));
+
+        // When
+        service.delete(1L);
+    }
+
+    @DisplayName(value = "Delete should throw an exception")
+    @Test
+    void delete_should_throw_an_exception() {
+
+        // Given
+        Long reservationID = 1L;
+        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        when(repository.getReservationById(reservationID)).thenReturn(Optional.empty());
+
+        // When
+        TWAException exception = assertThrows(TWAException.class, () -> service.delete(reservationID));
+
+        // Then
+        assertAll(() -> assertEquals(APIError.RESERVATION_NOT_FOUND.getHttpStatus(), exception.getStatus()),
+                () -> assertEquals(APIError.RESERVATION_NOT_FOUND.getMessage(), exception.getDescription()));
+    }
+
+    @DisplayName(value = "GetReservations should return a valid list of reservations")
+    @Test
+    void getReservations_should_return_a_list_of_elements() {
+
+        // Given
         ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
 
-        service.getReservationById(1L);
+        Reservation reservationModel = getReservation(1L, "BUE", "MAD");
+        when(repository.getReservations()).thenReturn(List.of(reservationModel));
+
+        ReservationDTO reservationDTO = getReservationDTO(1L, "BUE", "MAD");
+        when(conversionService.convert(List.of(reservationModel), List.class)).thenReturn(List.of(reservationDTO));
+
+        // When
+        List<ReservationDTO> result = service.getReservations();
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertFalse(result.isEmpty()),
+                () -> assertTrue(result.contains(getReservationDTO(1L, "BUE", "MAD"))));
+    }
+
+    @DisplayName(value = "GetReservation should return the information of a valid reservation")
+    @Test
+    void getReservation_should_return_the_information() {
+        // Given
+        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+
+        Reservation reservationModel = getReservation(1L, "BUE", "MAD");
+        when(repository.getReservationById(1L)).thenReturn(Optional.of(reservationModel));
+
+        ReservationDTO reservationDTO = getReservationDTO(1L, "BUE", "MAD");
+        when(conversionService.convert(reservationModel, ReservationDTO.class)).thenReturn(reservationDTO);
+
+        // When
+        ReservationDTO result = service.getReservationById(1L);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(getReservationDTO(1L, "BUE", "MAD"), result));
+    }
+
+    @DisplayName(value = "GetReservation should not return the information of a reservation")
+    @Test
+    void getReservation_should_not_return_the_information() {
+
+        // Given
+        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        when(repository.getReservationById(1L)).thenReturn(Optional.empty());
+
+        // When
+        TWAException exception = assertThrows(TWAException.class, () -> service.getReservationById(1L));
+
+        // Then
+        assertAll(() -> assertEquals(APIError.RESERVATION_NOT_FOUND.getHttpStatus(), exception.getStatus()),
+                () -> assertEquals(APIError.RESERVATION_NOT_FOUND.getMessage(), exception.getDescription()));
+    }
+
+    @DisplayName(value = "Update should change the reservation the return the information")
+    @Test
+    void update_should_change_reservation() {
+
+        // Given
+        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        ReservationDTO reservationDTO = getReservationDTO(3L, "BUE", "MIA");
+        Reservation reservationModel = getReservation(3L, "BUE", "MIA");
+
+        when(repository.getReservationById(3L)).thenReturn(Optional.of(reservationModel));
+        when(catalogConnector.getCity(any())).thenReturn(new CityDTO());
+        when(conversionService.convert(reservationModel, ReservationDTO.class)).thenReturn(reservationDTO);
+        when(conversionService.convert(reservationDTO, Reservation.class)).thenReturn(reservationModel);
+        when(repository.update(3L, reservationModel)).thenReturn(reservationModel);
+
+        // When
+        ReservationDTO result = service.update(3L, reservationDTO);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(reservationDTO, result));
+    }
+
+    @DisplayName(value = "Update should throw an exception")
+    @Test
+    void update_should_throw_an_exception() {
+
+        // Given
+        Long reservationID = 1L;
+        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        when(repository.getReservationById(reservationID)).thenReturn(Optional.empty());
+
+        // When
+        TWAException exception = assertThrows(TWAException.class,
+                () -> service.update(reservationID, getReservationDTO(1L, "BUE", "MAD")));
+
+        // Then
+        assertAll(() -> assertEquals(APIError.RESERVATION_NOT_FOUND.getHttpStatus(), exception.getStatus()),
+                () -> assertEquals(APIError.RESERVATION_NOT_FOUND.getMessage(), exception.getDescription()));
+
     }
 
 }

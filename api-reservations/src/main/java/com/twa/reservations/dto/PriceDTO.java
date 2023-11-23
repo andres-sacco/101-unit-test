@@ -1,6 +1,7 @@
 package com.twa.reservations.dto;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public class PriceDTO {
 
@@ -32,5 +33,21 @@ public class PriceDTO {
 
     public void setBasePrice(BigDecimal basePrice) {
         this.basePrice = basePrice;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        PriceDTO priceDTO = (PriceDTO) o;
+        return Objects.equals(totalPrice, priceDTO.totalPrice) && Objects.equals(totalTax, priceDTO.totalTax)
+                && Objects.equals(basePrice, priceDTO.basePrice);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(totalPrice, totalTax, basePrice);
     }
 }

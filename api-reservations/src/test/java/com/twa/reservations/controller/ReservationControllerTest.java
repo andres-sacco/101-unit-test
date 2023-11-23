@@ -1,55 +1,117 @@
 package com.twa.reservations.controller;
 
-import com.twa.reservations.connector.CatalogConnector;
-import com.twa.reservations.connector.configuration.HttpConnectorConfiguration;
-import com.twa.reservations.repository.ReservationRepository;
+import com.twa.reservations.dto.*;
 import com.twa.reservations.service.ReservationService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.convert.ConversionService;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
 
-// 1- It's not necessary use 'public'
-// 2- Add the tag and the display name
-public class ReservationControllerTest {
+import java.util.List;
+import java.util.Objects;
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use mocks instead of the real classes
-    // 6- Use display name to be more user-friendly
-    @Test
-    public void testGetReservations() {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
-        ReservationRepository repository = new ReservationRepository();
-        ConversionService conversionService = null;
-        CatalogConnector catalogConnector = new CatalogConnector(new HttpConnectorConfiguration());
+import static com.twa.reservations.util.ReservationUtil.getReservationDTO;
 
-        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+@Tag(value = "controller")
+@DisplayName(value = "ReservationController")
+class ReservationControllerTest {
 
-        ReservationController controller = new ReservationController(service);
+    @Mock
+    ReservationService service;
 
-        controller.getReservations();
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use mocks instead of the real classes
-    // 6- Use display name to be more user-friendly
+    @DisplayName(value = "GetReservations should return a valid list of reservations")
     @Test
-    public void testGetReservationById() {
+    void getReservations_should_return_a_list_of_elements() {
 
-        ReservationRepository repository = new ReservationRepository();
-        ConversionService conversionService = null;
-        CatalogConnector catalogConnector = new CatalogConnector(new HttpConnectorConfiguration());
+        // Given
+        ReservationController controller = new ReservationController(service);
+        ReservationDTO reservationDTO = getReservationDTO(1L, "BUE", "MAD");
+        when(service.getReservations()).thenReturn(List.of(reservationDTO));
 
-        ReservationService service = new ReservationService(repository, conversionService, catalogConnector);
+        // When
+        ResponseEntity<List<ReservationDTO>> result = controller.getReservations();
 
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertNotNull(result.getBody()),
+                () -> assertFalse(Objects.requireNonNull(result.getBody()).isEmpty()),
+                () -> assertTrue(Objects.requireNonNull(result.getBody()).contains(reservationDTO)));
+    }
+
+    @DisplayName(value = "GetReservation should return the information of a valid reservation")
+    @Test
+    void getReservation_should_return_the_information() {
+
+        // Given
+        ReservationController controller = new ReservationController(service);
+        ReservationDTO reservationDTO = getReservationDTO(1L, "BUE", "MAD");
+        when(service.getReservationById(1L)).thenReturn(reservationDTO);
+
+        // When
+        ResponseEntity<ReservationDTO> result = controller.getReservationById(1L);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertNotNull(result.getBody()),
+                () -> assertEquals(getReservationDTO(1L, "BUE", "MAD"), result.getBody()));
+    }
+
+    @DisplayName(value = "Delete should remove a reservation")
+    @Test
+    void delete_should_remove_a_reservation() {
+
+        // Given
         ReservationController controller = new ReservationController(service);
 
-        controller.getReservationById(1L);
+        // When
+        ResponseEntity<Void> result = controller.delete(1L);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertNull(result.getBody()));
     }
+
+    @DisplayName(value = "Save should persist the reservation the return the information")
+    @Test
+    void save_should_persist_reservation() {
+
+        // Given
+        ReservationController controller = new ReservationController(service);
+        ReservationDTO reservationDTO = getReservationDTO(null, "BUE", "MIA");
+
+        when(service.save(reservationDTO)).thenReturn(getReservationDTO(3L, "BUE", "MIA"));
+
+        // When
+        ReservationDTO result = service.save(reservationDTO);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(getReservationDTO(3L, "BUE", "MIA"), result));
+    }
+
+    @DisplayName(value = "Update should change the reservation the return the information")
+    @Test
+    void update_should_change_reservation() {
+
+        // Given
+        ReservationController controller = new ReservationController(service);
+        ReservationDTO reservationDTO = getReservationDTO(1L, "BUE", "MIA");
+
+        when(service.update(1L, reservationDTO)).thenReturn(getReservationDTO(1L, "BUE", "MIA"));
+
+        // When
+        ReservationDTO result = service.update(1L, reservationDTO);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(getReservationDTO(1L, "BUE", "MIA"), result));
+    }
+
 }

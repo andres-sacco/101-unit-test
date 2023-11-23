@@ -3,6 +3,8 @@ package com.twa.reservations.dto;
 import com.twa.reservations.validator.CityFormatConstraint;
 import jakarta.validation.constraints.NotBlank;
 
+import java.util.Objects;
+
 public class SegmentDTO {
 
     @CityFormatConstraint
@@ -58,5 +60,22 @@ public class SegmentDTO {
 
     public void setCarrier(String carrier) {
         this.carrier = carrier;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        SegmentDTO that = (SegmentDTO) o;
+        return Objects.equals(origin, that.origin) && Objects.equals(destination, that.destination)
+                && Objects.equals(departure, that.departure) && Objects.equals(arrival, that.arrival)
+                && Objects.equals(carrier, that.carrier);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(origin, destination, departure, arrival, carrier);
     }
 }

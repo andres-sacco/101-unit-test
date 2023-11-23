@@ -3,6 +3,7 @@ package com.twa.reservations.dto;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Objects;
 
 public class ItineraryDTO {
 
@@ -25,5 +26,20 @@ public class ItineraryDTO {
 
     public void setPrice(PriceDTO price) {
         this.price = price;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        ItineraryDTO that = (ItineraryDTO) o;
+        return Objects.equals(segment, that.segment) && Objects.equals(price, that.price);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(segment, price);
     }
 }

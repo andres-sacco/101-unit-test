@@ -1,99 +1,123 @@
 package com.twa.reservations.repository;
 
 import com.twa.reservations.model.*;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
-// 1- It's not necessary use 'public'
-// 2- Add the tag and the display name
-public class ReservationRepositoryTest {
+import static org.junit.jupiter.api.Assertions.*;
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
+import static com.twa.reservations.util.ReservationUtil.getReservation;
+
+@Tag(value = "persistence")
+@DisplayName(value = "ReservationRepository")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class ReservationRepositoryTest {
+
+    @Order(1)
+    @DisplayName(value = "GetReservations should return a valid list of reservations")
     @Test
-    public void testGetReservations() {
+    void getReservations_should_return_a_list_of_elements() {
+        // Given
         ReservationRepository repository = new ReservationRepository();
 
-        repository.getReservations();
+        // When
+        List<Reservation> result = repository.getReservations();
+
+        // Then - First option
+        /*
+         * assertAll( ()-> assertNotNull(result), ()-> assertFalse(result.isEmpty()), ()-> assertEquals(1L,
+         * result.get(0).getId()), ()-> assertNotNull(result.get(0).getItinerary()), ()->
+         * assertNotNull(result.get(0).getPassengers()), ()-> assertFalse(result.get(0).getPassengers().isEmpty()) );
+         */
+
+        // Then - Second option
+        assertAll(() -> assertNotNull(result), () -> assertFalse(result.isEmpty()),
+                () -> assertTrue(result.contains(getReservation(1L, "EZE", "MIA"))));
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
-    // 6- Not exists a test when not exist a reservation
+    @Order(1)
+    @DisplayName(value = "GetReservation should return the information of a valid reservation")
     @Test
-    public void testGetReservationById() {
+    void getReservation_should_return_the_information() {
+
+        // Given
         ReservationRepository repository = new ReservationRepository();
 
-        repository.getReservationById(1L);
+        // When
+        Optional<Reservation> result = repository.getReservationById(1L);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertTrue(result.isPresent()),
+                () -> assertEquals(getReservation(1L, "EZE", "MIA"), result.get()));
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
-    // 6- Extract the setup to an external method
+    @Order(1)
+    @DisplayName(value = "GetReservation should not return the information of a reservation")
     @Test
-    public void testSave() {
+    void getReservation_should_not_return_the_information() {
 
+        // Given
         ReservationRepository repository = new ReservationRepository();
 
-        Passenger passenger = new Passenger();
-        passenger.setFirstName("Andres");
-        passenger.setLastName("Sacco");
-        passenger.setId(1L);
-        passenger.setDocumentType("DNI");
-        passenger.setDocumentNumber("12345678");
-        passenger.setBirthday(LocalDate.of(1985, 1, 1));
+        // When
+        Optional<Reservation> result = repository.getReservationById(6L);
 
-        Price price = new Price();
-        price.setBasePrice(BigDecimal.ONE);
-        price.setTotalTax(BigDecimal.ZERO);
-        price.setTotalPrice(BigDecimal.ONE);
-
-        Segment segment = new Segment();
-        segment.setArrival("2025-01-01");
-        segment.setDeparture("2024-12-31");
-        segment.setOrigin("EZE");
-        segment.setDestination("MIA");
-        segment.setCarrier("AA");
-        segment.setId(1L);
-
-        Itinerary itinerary = new Itinerary();
-        itinerary.setId(1L);
-        itinerary.setPrice(price);
-        itinerary.setSegment(List.of(segment));
-
-        Reservation reservation = new Reservation();
-        reservation.setPassengers(List.of(passenger));
-        reservation.setItinerary(itinerary);
-
-        repository.save(reservation);
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertTrue(result.isEmpty()));
     }
 
-    // 0- Declare explicit each section on the test
-    // 1- It's not necessary use 'public'
-    // 2- Remove the word 'test' for the method
-    // 3- Indicate the idea of the test with the name of the method
-    // 4- Include assertions
-    // 5- Use display name to be more user-friendly
-    // 6- Check the order
+    @DisplayName(value = "Save should persist the reservation the return the information")
     @Test
-    public void testDelete() {
+    @Order(2)
+    void save_should_persist_reservation() {
+
+        // Given
+        ReservationRepository repository = new ReservationRepository();
+        Reservation reservation = getReservation(null, "BUE", "MAD");
+
+        // When
+        Reservation result = repository.save(reservation);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(getReservation(3L, "BUE", "MAD"), result));
+    }
+
+    @DisplayName(value = "Delete should remove a reservation")
+    @Test
+    @Order(3)
+    void delete_should_remove_a_reservation() {
+
+        // Given
         ReservationRepository repository = new ReservationRepository();
 
+        // When
         repository.delete(2L);
+
+        // It's not necessary to it. It's just to check
+        Optional<Reservation> result = repository.getReservationById(2L);
+
+        // Then
+        assertTrue(result.isEmpty());
     }
+
+    @DisplayName(value = "Update should change the reservation the return the information")
+    @Test
+    @Order(4)
+    void update_should_change_reservation() {
+
+        // Given
+        ReservationRepository repository = new ReservationRepository();
+        Reservation reservation = getReservation(1L, "BUE", "MAD");
+        reservation.getItinerary().getPrice().setBasePrice(BigDecimal.TEN);
+
+        // When
+        Reservation result = repository.update(1L, reservation);
+
+        // Then
+        assertAll(() -> assertNotNull(result), () -> assertEquals(reservation, result));
+    }
+
 }

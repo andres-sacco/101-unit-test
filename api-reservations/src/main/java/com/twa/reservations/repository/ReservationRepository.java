@@ -46,6 +46,40 @@ public class ReservationRepository {
         reservation.setItinerary(itinerary);
 
         reservations.add(reservation);
+
+        passenger = new Passenger();
+        passenger.setFirstName("Andres");
+        passenger.setLastName("Sacco");
+        passenger.setId(1L);
+        passenger.setDocumentType("DNI");
+        passenger.setDocumentNumber("12345678");
+        passenger.setBirthday(LocalDate.of(1985, 1, 1));
+
+        price = new Price();
+        price.setBasePrice(BigDecimal.ONE);
+        price.setTotalTax(BigDecimal.ZERO);
+        price.setTotalPrice(BigDecimal.ONE);
+
+        segment = new Segment();
+        segment.setArrival("2025-01-01");
+        segment.setDeparture("2024-12-31");
+        segment.setOrigin("EZE");
+        segment.setDestination("MIA");
+        segment.setCarrier("AA");
+        segment.setId(1L);
+
+        itinerary = new Itinerary();
+        itinerary.setId(1L);
+        itinerary.setPrice(price);
+        itinerary.setSegment(List.of(segment));
+
+        reservation = new Reservation();
+        reservation.setId(2L);
+        reservation.setPassengers(List.of(passenger));
+        reservation.setItinerary(itinerary);
+
+        reservations.add(reservation);
+
     }
 
     public List<Reservation> getReservations() {
