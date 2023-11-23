@@ -62,8 +62,8 @@ public class ReservationService {
     }
 
     public ReservationDTO update(Long id, ReservationDTO reservation) {
-        Optional<Reservation> resultFind = repository.getReservationById(id);
-        if (resultFind.isEmpty()) {
+
+        if (repository.getReservationById(id).isEmpty()) {
             LOGGER.debug("Not exist reservation with the id {}", id);
             throw new TWAException(APIError.RESERVATION_NOT_FOUND);
         }
@@ -74,8 +74,7 @@ public class ReservationService {
     }
 
     public void delete(Long id) {
-        Optional<Reservation> result = repository.getReservationById(id);
-        if (result.isEmpty()) {
+        if (repository.getReservationById(id).isEmpty()) {
             LOGGER.debug("Not exist reservation with the id {}", id);
             throw new TWAException(APIError.RESERVATION_NOT_FOUND);
         }
